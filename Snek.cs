@@ -114,14 +114,60 @@ public class Snek : Game
 
         _spriteBatch.Begin();
 
+        // Draw walls with offset
+        for (int x = 0; x <= _grid.Width + 1; x++)
+        {
+            // Draw top wall (moved down by 1)
+            _spriteBatch.Draw(
+                pixel,
+                new Rectangle(x * _grid.CellSize, 0, _grid.CellSize - 1, _grid.CellSize - 1),
+                Color.DarkGray
+            );
+
+            // Draw bottom wall
+            _spriteBatch.Draw(
+                pixel,
+                new Rectangle(
+                    x * _grid.CellSize,
+                    (_grid.Height + 1) * _grid.CellSize,
+                    _grid.CellSize - 1,
+                    _grid.CellSize - 1
+                ),
+                Color.DarkGray
+            );
+        }
+
+        for (int y = 0; y <= _grid.Height + 1; y++)
+        {
+            // Draw left wall (moved right by 1)
+            _spriteBatch.Draw(
+                pixel,
+                new Rectangle(0, y * _grid.CellSize, _grid.CellSize - 1, _grid.CellSize - 1),
+                Color.DarkGray
+            );
+
+            // Draw right wall
+            _spriteBatch.Draw(
+                pixel,
+                new Rectangle(
+                    (_grid.Width + 1) * _grid.CellSize,
+                    y * _grid.CellSize,
+                    _grid.CellSize - 1,
+                    _grid.CellSize - 1
+                ),
+                Color.DarkGray
+            );
+        }
+
+        // Adjust game elements to account for the offset
         // Draw grid cells
         foreach (var position in _snake.Body)
         {
             _spriteBatch.Draw(
                 pixel,
                 new Rectangle(
-                    position.X * _grid.CellSize,
-                    position.Y * _grid.CellSize,
+                    (position.X + 1) * _grid.CellSize,
+                    (position.Y + 1) * _grid.CellSize,
                     _grid.CellSize - 1,
                     _grid.CellSize - 1
                 ),
@@ -129,12 +175,12 @@ public class Snek : Game
             );
         }
 
-        // Draw food
+        // Draw food with offset
         _spriteBatch.Draw(
             pixel,
             new Rectangle(
-                _food.Position.X * _grid.CellSize,
-                _food.Position.Y * _grid.CellSize,
+                (_food.Position.X + 1) * _grid.CellSize,
+                (_food.Position.Y + 1) * _grid.CellSize,
                 _grid.CellSize - 1,
                 _grid.CellSize - 1
             ),
