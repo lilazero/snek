@@ -28,7 +28,7 @@ public class Snake
     {
         var newHead = new Point(Head.X + _direction.X, Head.Y + _direction.Y);
         _body.Insert(0, newHead);
-        
+
         if (!_shouldGrow)
             _body.RemoveAt(_body.Count - 1);
         _shouldGrow = false;

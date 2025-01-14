@@ -23,7 +23,7 @@ public class Snek : Game
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-        
+
         _graphics.PreferredBackBufferWidth = 800;
         _graphics.PreferredBackBufferHeight = 600;
     }
@@ -53,8 +53,10 @@ public class Snek : Game
 
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || 
-            Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (
+            GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
+            || Keyboard.GetState().IsKeyDown(Keys.Escape)
+        )
             Exit();
 
         if (_gameOver)
@@ -73,10 +75,14 @@ public class Snek : Game
     private void HandleInput()
     {
         var keyState = Keyboard.GetState();
-        if (keyState.IsKeyDown(Keys.Left)) _snake.SetDirection(new Point(-1, 0));
-        if (keyState.IsKeyDown(Keys.Right)) _snake.SetDirection(new Point(1, 0));
-        if (keyState.IsKeyDown(Keys.Up)) _snake.SetDirection(new Point(0, -1));
-        if (keyState.IsKeyDown(Keys.Down)) _snake.SetDirection(new Point(0, 1));
+        if (keyState.IsKeyDown(Keys.Left))
+            _snake.SetDirection(new Point(-1, 0));
+        if (keyState.IsKeyDown(Keys.Right))
+            _snake.SetDirection(new Point(1, 0));
+        if (keyState.IsKeyDown(Keys.Up))
+            _snake.SetDirection(new Point(0, -1));
+        if (keyState.IsKeyDown(Keys.Down))
+            _snake.SetDirection(new Point(0, 1));
     }
 
     private void UpdateSnake(GameTime gameTime)
@@ -111,33 +117,48 @@ public class Snek : Game
         // Draw grid cells
         foreach (var position in _snake.Body)
         {
-            _spriteBatch.Draw(pixel, new Rectangle(
-                position.X * _grid.CellSize, 
-                position.Y * _grid.CellSize, 
-                _grid.CellSize - 1, 
-                _grid.CellSize - 1), 
-                Color.Green);
+            _spriteBatch.Draw(
+                pixel,
+                new Rectangle(
+                    position.X * _grid.CellSize,
+                    position.Y * _grid.CellSize,
+                    _grid.CellSize - 1,
+                    _grid.CellSize - 1
+                ),
+                Color.Green
+            );
         }
 
         // Draw food
-        _spriteBatch.Draw(pixel, new Rectangle(
-            _food.Position.X * _grid.CellSize,
-            _food.Position.Y * _grid.CellSize,
-            _grid.CellSize - 1,
-            _grid.CellSize - 1),
-            Color.Red);
+        _spriteBatch.Draw(
+            pixel,
+            new Rectangle(
+                _food.Position.X * _grid.CellSize,
+                _food.Position.Y * _grid.CellSize,
+                _grid.CellSize - 1,
+                _grid.CellSize - 1
+            ),
+            Color.Red
+        );
 
         // Draw score
-        _spriteBatch.DrawString(_font, $"Score: {_scoreCounter.Score}", 
-            new Vector2(700, 10), Color.White);
+        _spriteBatch.DrawString(
+            _font,
+            $"Score: {_scoreCounter.Score}",
+            new Vector2(700, 10),
+            Color.White
+        );
 
         if (_gameOver)
         {
             var text = "Game Over! Press R to restart";
             var textSize = _font.MeasureString(text);
-            _spriteBatch.DrawString(_font, text,
+            _spriteBatch.DrawString(
+                _font,
+                text,
                 new Vector2(400 - textSize.X / 2, 300 - textSize.Y / 2),
-                Color.White);
+                Color.White
+            );
         }
 
         _spriteBatch.End();
