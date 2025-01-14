@@ -14,9 +14,10 @@ public class Snek : Game
     private Food _food;
     private ScoreCounter _scoreCounter;
     private SpriteFont _font;
-    private bool _gameOver;
+    private GameState _gameState;
     private float _moveTimer;
     private const float MoveInterval = 0.15f;
+    private KeyboardState _previousKeyboardState;
 
     public Snek()
     {
@@ -31,7 +32,8 @@ public class Snek : Game
     protected override void Initialize()
     {
         _grid = new GameGrid(20, 15, 30);
-        ResetGame();
+        _gameState = GameState.MainMenu;
+        _previousKeyboardState = Keyboard.GetState();
         base.Initialize();
     }
 
@@ -41,8 +43,8 @@ public class Snek : Game
         _food = new Food();
         _scoreCounter = new ScoreCounter();
         _food.Spawn(_grid, _snake.Body.ToList());
-        _gameOver = false;
         _moveTimer = 0;
+        _gameState = GameState.Playing;
     }
 
     protected override void LoadContent()
@@ -53,23 +55,47 @@ public class Snek : Game
 
     protected override void Update(GameTime gameTime)
     {
+        var currentKeyboardState = Keyboard.GetState();
+
         if (
             GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
-            || Keyboard.GetState().IsKeyDown(Keys.Escape)
+            || currentKeyboardState.IsKeyDown(Keys.Escape)
         )
             Exit();
 
-        if (_gameOver)
+        switch (_gameState)
         {
-            if (Keyboard.GetState().IsKeyDown(Keys.R))
-                ResetGame();
-            return;
+            case GameState.MainMenu:
+                if (IsKeyPressed(Keys.Enter, currentKeyboardState))
+                {
+                    ResetGame();
+                }
+                break;
+
+            case GameState.Playing:
+                HandleInput();
+                UpdateSnake(gameTime);
+                break;
+
+            case GameState.GameOver:
+                if (IsKeyPressed(Keys.R, currentKeyboardState))
+                {
+                    ResetGame();
+                }
+                else if (IsKeyPressed(Keys.M, currentKeyboardState))
+                {
+                    _gameState = GameState.MainMenu;
+                }
+                break;
         }
 
-        HandleInput();
-        UpdateSnake(gameTime);
-
+        _previousKeyboardState = currentKeyboardState;
         base.Update(gameTime);
+    }
+
+    private bool IsKeyPressed(Keys key, KeyboardState currentKeyboardState)
+    {
+        return currentKeyboardState.IsKeyDown(key) && _previousKeyboardState.IsKeyUp(key);
     }
 
     private void HandleInput()
@@ -95,7 +121,7 @@ public class Snek : Game
 
             if (_grid.IsOutOfBounds(_snake.Head) || _snake.CollidesWith(_snake.Head))
             {
-                _gameOver = true;
+                _gameState = GameState.GameOver;
                 return;
             }
 
@@ -114,97 +140,156 @@ public class Snek : Game
 
         _spriteBatch.Begin();
 
-        // Draw walls with offset
-        for (int x = 0; x <= _grid.Width + 1; x++)
+        switch (_gameState)
         {
-            // Draw top wall (moved down by 1)
-            _spriteBatch.Draw(
-                pixel,
-                new Rectangle(x * _grid.CellSize, 0, _grid.CellSize - 1, _grid.CellSize - 1),
-                Color.DarkGray
-            );
+            case GameState.MainMenu:
+                var titleText = "SNAKE GAME";
+                var startText = "Press ENTER to Start";
+                var titleSize = _font.MeasureString(titleText);
+                var startSize = _font.MeasureString(startText);
 
-            // Draw bottom wall
-            _spriteBatch.Draw(
-                pixel,
-                new Rectangle(
-                    x * _grid.CellSize,
-                    (_grid.Height + 1) * _grid.CellSize,
-                    _grid.CellSize - 1,
-                    _grid.CellSize - 1
-                ),
-                Color.DarkGray
-            );
-        }
+                _spriteBatch.DrawString(
+                    _font,
+                    titleText,
+                    new Vector2(400 - titleSize.X / 2, 250),
+                    Color.Green
+                );
+                _spriteBatch.DrawString(
+                    _font,
+                    startText,
+                    new Vector2(400 - startSize.X / 2, 300),
+                    Color.White
+                );
+                break;
 
-        for (int y = 0; y <= _grid.Height + 1; y++)
-        {
-            // Draw left wall (moved right by 1)
-            _spriteBatch.Draw(
-                pixel,
-                new Rectangle(0, y * _grid.CellSize, _grid.CellSize - 1, _grid.CellSize - 1),
-                Color.DarkGray
-            );
+            case GameState.Playing:
+                // Draw walls with offset
+                for (int x = 0; x <= _grid.Width + 1; x++)
+                {
+                    // Draw top wall (moved down by 1)
+                    _spriteBatch.Draw(
+                        pixel,
+                        new Rectangle(
+                            x * _grid.CellSize,
+                            0,
+                            _grid.CellSize - 1,
+                            _grid.CellSize - 1
+                        ),
+                        Color.DarkGray
+                    );
 
-            // Draw right wall
-            _spriteBatch.Draw(
-                pixel,
-                new Rectangle(
-                    (_grid.Width + 1) * _grid.CellSize,
-                    y * _grid.CellSize,
-                    _grid.CellSize - 1,
-                    _grid.CellSize - 1
-                ),
-                Color.DarkGray
-            );
-        }
+                    // Draw bottom wall
+                    _spriteBatch.Draw(
+                        pixel,
+                        new Rectangle(
+                            x * _grid.CellSize,
+                            (_grid.Height + 1) * _grid.CellSize,
+                            _grid.CellSize - 1,
+                            _grid.CellSize - 1
+                        ),
+                        Color.DarkGray
+                    );
+                }
 
-        // Adjust game elements to account for the offset
-        // Draw grid cells
-        foreach (var position in _snake.Body)
-        {
-            _spriteBatch.Draw(
-                pixel,
-                new Rectangle(
-                    (position.X + 1) * _grid.CellSize,
-                    (position.Y + 1) * _grid.CellSize,
-                    _grid.CellSize - 1,
-                    _grid.CellSize - 1
-                ),
-                Color.Green
-            );
-        }
+                for (int y = 0; y <= _grid.Height + 1; y++)
+                {
+                    // Draw left wall (moved right by 1)
+                    _spriteBatch.Draw(
+                        pixel,
+                        new Rectangle(
+                            0,
+                            y * _grid.CellSize,
+                            _grid.CellSize - 1,
+                            _grid.CellSize - 1
+                        ),
+                        Color.DarkGray
+                    );
 
-        // Draw food with offset
-        _spriteBatch.Draw(
-            pixel,
-            new Rectangle(
-                (_food.Position.X + 1) * _grid.CellSize,
-                (_food.Position.Y + 1) * _grid.CellSize,
-                _grid.CellSize - 1,
-                _grid.CellSize - 1
-            ),
-            Color.Red
-        );
+                    // Draw right wall
+                    _spriteBatch.Draw(
+                        pixel,
+                        new Rectangle(
+                            (_grid.Width + 1) * _grid.CellSize,
+                            y * _grid.CellSize,
+                            _grid.CellSize - 1,
+                            _grid.CellSize - 1
+                        ),
+                        Color.DarkGray
+                    );
+                }
 
-        // Draw score
-        _spriteBatch.DrawString(
-            _font,
-            $"Score: {_scoreCounter.Score}",
-            new Vector2(700, 10),
-            Color.White
-        );
+                // Adjust game elements to account for the offset
+                // Draw grid cells
+                foreach (var position in _snake.Body)
+                {
+                    _spriteBatch.Draw(
+                        pixel,
+                        new Rectangle(
+                            (position.X + 1) * _grid.CellSize,
+                            (position.Y + 1) * _grid.CellSize,
+                            _grid.CellSize - 1,
+                            _grid.CellSize - 1
+                        ),
+                        Color.Green
+                    );
+                }
 
-        if (_gameOver)
-        {
-            var text = "Game Over! Press R to restart";
-            var textSize = _font.MeasureString(text);
-            _spriteBatch.DrawString(
-                _font,
-                text,
-                new Vector2(400 - textSize.X / 2, 300 - textSize.Y / 2),
-                Color.White
-            );
+                // Draw food with offset
+                _spriteBatch.Draw(
+                    pixel,
+                    new Rectangle(
+                        (_food.Position.X + 1) * _grid.CellSize,
+                        (_food.Position.Y + 1) * _grid.CellSize,
+                        _grid.CellSize - 1,
+                        _grid.CellSize - 1
+                    ),
+                    Color.Red
+                );
+
+                // Draw score
+                _spriteBatch.DrawString(
+                    _font,
+                    $"Score: {_scoreCounter.Score}",
+                    new Vector2(700, 10),
+                    Color.White
+                );
+                break;
+
+            case GameState.GameOver:
+                // ... existing game over drawing code ...
+                var gameOverText = "Game Over!";
+                var restartText = "Press R to Restart";
+                var menuText = "Press M for Main Menu";
+                var goSize = _font.MeasureString(gameOverText);
+
+                _spriteBatch.DrawString(
+                    _font,
+                    gameOverText,
+                    new Vector2(400 - goSize.X / 2, 250),
+                    Color.Red
+                );
+                _spriteBatch.DrawString(
+                    _font,
+                    restartText,
+                    new Vector2(400 - _font.MeasureString(restartText).X / 2, 300),
+                    Color.White
+                );
+                _spriteBatch.DrawString(
+                    _font,
+                    menuText,
+                    new Vector2(400 - _font.MeasureString(menuText).X / 2, 330),
+                    Color.White
+                );
+                _spriteBatch.DrawString(
+                    _font,
+                    $"Final Score: {_scoreCounter.Score}",
+                    new Vector2(
+                        400 - _font.MeasureString($"Final Score: {_scoreCounter.Score}").X / 2,
+                        370
+                    ),
+                    Color.White
+                );
+                break;
         }
 
         _spriteBatch.End();
